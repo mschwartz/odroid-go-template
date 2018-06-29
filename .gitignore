@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+# ESP32 temp dirs
+build
+cache
