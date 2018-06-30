@@ -14,7 +14,12 @@ BUILDER=${IDE}/arduino-builder
 BUILD_PATH=${PWD}/build
 CACHE_PATH=${PWD}/cache
 
+ifndef verbose
 VERBOSE=-quiet
+else
+VERBOSE=-verbose
+endif
+
 #VERBOSE=-verbose
 
 bin:
