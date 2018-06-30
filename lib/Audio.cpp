@@ -2,6 +2,7 @@
 
 static volatile struct Sound {
   uint16_t rate;
+  float index, step;
   uint8_t *start;
   uint8_t *current;
   uint8_t *end;
@@ -9,6 +10,8 @@ static volatile struct Sound {
 } currentSound;
 
 #include "Audio.h"
+
+static const int SAMPLERATE = 10000; // 10KHz
 
 static uint16_t volume = 8;
 static hw_timer_t *timer = NULL;
@@ -20,6 +23,7 @@ static void IRAM_ATTR onTimer() {
     if (currentSound.current >= currentSound.end) {
       if (currentSound.loop) {
         currentSound.current = currentSound.start;
+        currentSound.index = 0;
       }
       else {
         currentSound.current = NULL;
@@ -27,7 +31,9 @@ static void IRAM_ATTR onTimer() {
         return;
       }
     }
-    dacWrite(SPEAKER_PIN, *currentSound.current++ / volume);
+    dacWrite(SPEAKER_PIN, *currentSound.current / volume);
+    currentSound.index += currentSound.step;
+    curentSound.current = &currentSound.start[currentSound.index];
   }
   portEXIT_CRITICAL_ISR(&timerMux);
 }
@@ -38,7 +44,7 @@ Audio::Audio() {
   // set up hardware timer for 10KHz sample rate
   timer = timerBegin(0, 80, true);
   timerAttachInterrupt(timer, &onTimer, true);
-  timerAlarmWrite(timer, 1000000 / 10000, true); // 10KHz
+  timerAlarmWrite(timer, 1000000 / SAMPLE_RATE, true); // 10KHz
   timerAlarmEnable(timer);
 }
 
@@ -50,6 +56,8 @@ void Audio::playSound(uint8_t *data, uint16_t rate, bool loop) {
   currentSound.end = &data[sizeof(data)];
   currentSound.loop = loop;
   currentSound.rate = rate;
+  currentSound.index = 0;
+  currentSound.step = rate / SAMPLE_RATE;
   portEXIT_CRITICAL_ISR(&timerMux);
 }
 
